@@ -94,3 +94,43 @@ class SwiGLU(nn.Module):
     def forward(self, x):
         # 1. 计算门控分支 (包含 SiLU 激活)
         gate = F.silu(self.w_gate(x))
+        # 2. 计算数值分支 (线性)
+        val = self.w_val(x)
+        # 3. 逐元素相乘 (Element-wise multiplication)
+        return gate * val
+
+# ==========================================
+# 第四部分：输出层专用
+# ==========================================
+
+# 9. Softmax
+# 用途: 多分类问题的最后一层，将数值转化为“概率分布”，和为 1。
+def softmax_demo(x):
+    # dim=-1 表示在最后一个维度上计算
+    return F.softmax(x, dim=-1)
+
+# ==========================================
+# 运行测试
+# ==========================================
+if __name__ == "__main__":
+    # 模拟输入数据: batch_size=2, features=4
+    x = torch.tensor([[-2.0, -1.0, 0.5, 2.0], 
+                      [1.0,  -3.0, 0.0, 1.5]])
+
+    print("--- 1. 经典激活函数测试 ---")
+    model_classic = ClassicActivations()
+    res = model_classic(x)
+    print("ReLU 输出 (负数变0):\n", res["ReLU"])
+
+    print("\n--- 2. SwiGLU 测试 (重点) ---")
+    # 假设输入维度是 4
+    swiglu_layer = SwiGLU(dim=4)
+    out_swiglu = swiglu_layer(x)
+    print("输入形状:", x.shape)
+    print("SwiGLU 输出形状:", out_swiglu.shape)
+    print("SwiGLU 输出值:\n", out_swiglu)
+    
+    print("\n--- 3. Softmax 测试 ---")
+    probs = softmax_demo(x)
+    print("Softmax 概率分布 (行和为1):\n", probs)
+    print("验证行和:", probs.sum(dim=-1))
